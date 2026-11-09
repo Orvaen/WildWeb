@@ -98,8 +98,8 @@ export default function ProfileView({ p, own, votes = 0 }: { p: PublicUser; own:
     <div className="wrap max-w-[1080px] pt-6 pb-16">
       {/* En-tête du profil */}
       <div className="card overflow-hidden">
-        <div className="relative h-40 sm:h-52" style={{ background: bannerOf(p.banner) }}>
-          <div className="absolute inset-0 opacity-30" style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,.5) 1px, transparent 1.2px)', backgroundSize: '18px 18px', maskImage: 'linear-gradient(transparent, #000)' }} />
+        <div className="relative h-40 sm:h-52" style={{ background: bannerOf(p.banner, p.bannerImage) }}>
+          {!p.bannerImage && <div className="absolute inset-0 opacity-30" style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,.5) 1px, transparent 1.2px)', backgroundSize: '18px 18px', maskImage: 'linear-gradient(transparent, #000)' }} />}
         </div>
         <div className="flex flex-wrap items-end gap-x-5 gap-y-3 px-5 pb-5 sm:px-7">
           <div className="relative -mt-14 sm:-mt-16">

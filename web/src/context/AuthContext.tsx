@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
-import { api, ApiError, setToken, type User } from '../lib/api'
+import { api, ApiError, setToken, type ImageKind, type User } from '../lib/api'
 import { tokenStore } from '../lib/storage'
 
 type AuthState = {
@@ -10,8 +10,8 @@ type AuthState = {
   logout: () => void
   updateProfile: (patch: Parameters<typeof api.updateMe>[0]) => Promise<User>
   changePassword: (current: string, next: string) => Promise<void>
-  uploadAvatar: (file: File) => Promise<User>
-  removeAvatar: () => Promise<User>
+  uploadImage: (kind: ImageKind, file: File) => Promise<User>
+  removeImage: (kind: ImageKind) => Promise<User>
 }
 
 const AuthCtx = createContext<AuthState | null>(null)
@@ -61,8 +61,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(u)
       return u
     },
-    uploadAvatar: async (file) => { const u = await api.uploadAvatar(file); setUser(u); return u },
-    removeAvatar: async () => { const u = await api.deleteAvatar(); setUser(u); return u },
+    uploadImage: async (kind, file) => { const u = await api.uploadImage(kind, file); setUser(u); return u },
+    removeImage: async (kind) => { const u = await api.deleteImage(kind); setUser(u); return u },
     changePassword: async (current, next) => {
       // L'API révoque les anciens jetons et en renvoie un nouveau.
       const r = await api.changePassword(current, next)

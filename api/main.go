@@ -11,7 +11,7 @@ import (
 )
 
 // apiVersion change à chaque évolution du format des données renvoyées au site.
-const apiVersion = "0.3.0"
+const apiVersion = "0.4.0"
 
 type Server struct {
 	store   *Store
@@ -61,8 +61,12 @@ func main() {
 	mux.HandleFunc("PATCH /api/me", s.auth(s.handleUpdateMe))
 	mux.HandleFunc("POST /api/me/password", s.auth(s.handleChangePassword))
 	mux.HandleFunc("GET /api/users/{username}", s.handlePublicProfile)
-	mux.HandleFunc("POST /api/me/avatar", s.limit(s.auth(s.handleUploadAvatar)))
-	mux.HandleFunc("DELETE /api/me/avatar", s.auth(s.handleDeleteAvatar))
+	avatarOf := func(u *User) string { return u.Avatar }
+	bannerOf := func(u *User) string { return u.BannerImage }
+	mux.HandleFunc("POST /api/me/avatar", s.limit(s.auth(s.handleUpload(avatarKind, store.SetAvatar, avatarOf))))
+	mux.HandleFunc("DELETE /api/me/avatar", s.auth(s.handleDeleteUpload(avatarKind, store.SetAvatar, avatarOf)))
+	mux.HandleFunc("POST /api/me/banner", s.limit(s.auth(s.handleUpload(bannerKind, store.SetBannerImage, bannerOf))))
+	mux.HandleFunc("DELETE /api/me/banner", s.auth(s.handleDeleteUpload(bannerKind, store.SetBannerImage, bannerOf)))
 	mux.Handle("GET /api/uploads/", s.uploadsHandler())
 
 	srv := &http.Server{

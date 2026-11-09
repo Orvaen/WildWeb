@@ -11,12 +11,15 @@ export type User = {
   location: string
   banner: string
   avatar: string
+  bannerImage: string
   createdAt: string
   lastSeenAt: string | null
 }
 
-export type PublicUser = Pick<User, 'username' | 'color' | 'role' | 'bio' | 'location' | 'banner' | 'avatar' | 'createdAt' | 'lastSeenAt'>
+export type PublicUser = Pick<User, 'username' | 'color' | 'role' | 'bio' | 'location' | 'banner' | 'avatar' | 'bannerImage' | 'createdAt' | 'lastSeenAt'>
 export type ProfilePatch = Partial<Pick<User, 'username' | 'email' | 'color' | 'lang' | 'bio' | 'location' | 'banner'>>
+
+export type ImageKind = 'avatar' | 'banner'
 
 export type AuthResponse = { token: string; expiresAt: string; user: User }
 
@@ -58,7 +61,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 // Complète les champs absents (API plus ancienne que le site, par exemple).
 function normalize<T extends Partial<User>>(u: T): T & PublicUser {
   return { ...u, bio: u.bio ?? '', location: u.location ?? '', banner: u.banner || 'ocean', color: u.color || '#005ee0',
-    role: u.role || 'joueur', avatar: u.avatar ?? '', lastSeenAt: u.lastSeenAt ?? null } as T & PublicUser
+    role: u.role || 'joueur', avatar: u.avatar ?? '', bannerImage: u.bannerImage ?? '', lastSeenAt: u.lastSeenAt ?? null } as T & PublicUser
 }
 const withUser = (r: AuthResponse): AuthResponse => ({ ...r, user: normalize(r.user) })
 
@@ -70,11 +73,12 @@ export const api = {
   me: () => request<User>('GET', '/me').then(normalize),
   updateMe: (patch: ProfilePatch) => request<User>('PATCH', '/me', patch).then(normalize),
   changePassword: (current: string, next: string) => request<AuthResponse>('POST', '/me/password', { current, new: next }).then(withUser),
-  uploadAvatar: (file: File) => {
+  // kind : 'avatar' ou 'banner' (même nom pour la route et le champ du formulaire)
+  uploadImage: (kind: ImageKind, file: File) => {
     const fd = new FormData()
-    fd.append('avatar', file)
-    return request<User>('POST', '/me/avatar', fd).then(normalize)
+    fd.append(kind, file)
+    return request<User>('POST', `/me/${kind}`, fd).then(normalize)
   },
-  deleteAvatar: () => request<User>('DELETE', '/me/avatar').then(normalize),
+  deleteImage: (kind: ImageKind) => request<User>('DELETE', `/me/${kind}`).then(normalize),
   profile: (username: string) => request<PublicUser>('GET', `/users/${encodeURIComponent(username)}`).then(normalize),
 }

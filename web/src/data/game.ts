@@ -79,6 +79,7 @@ export const BANNERS: Record<string, { label: string; bg: string }> = {
   glace: { label: 'Glace', bg: 'linear-gradient(120deg,#a9d8f5 0%,#dff3ff 50%,#8fb8de 100%)' },
   nuit: { label: 'Nuit', bg: 'linear-gradient(120deg,#05070a 0%,#18202b 55%,#2f3d55 100%)' },
 }
-export const bannerOf = (id: string) => (BANNERS[id] ?? BANNERS.ocean).bg
+export const bannerOf = (id: string, image?: string) =>
+  image ? `center / cover no-repeat url("${image}"), #1f2528` : (BANNERS[id] ?? BANNERS.ocean).bg
 
 export const ROLE_LABEL: Record<string, string> = { joueur: 'Joueur', moderateur: 'Modérateur', admin: 'Administrateur', fondateur: 'Fondateur' }

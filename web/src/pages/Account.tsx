@@ -4,7 +4,7 @@ import { Avatar, Field, PageHead } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
 import { useUi } from '../context/UiContext'
 import { BANNERS, PROFILE_COLORS, ROLE_LABEL, bannerOf } from '../data/game'
-import { ApiError, type User } from '../lib/api'
+import { ApiError, type ImageKind, type User } from '../lib/api'
 import { strongPassword, validEmail, validUsername } from '../lib/format'
 
 // Paramètres du compte, façon forum : menu à gauche, sections en cartes à droite.
@@ -42,11 +42,17 @@ function useSave() {
   return { errors, busy, save }
 }
 
-const AVATAR_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp']
+const IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp']
+const IMAGE_SPEC: Record<ImageKind, { maxMb: number; label: string; done: string; removed: string }> = {
+  avatar: { maxMb: 4, label: 'Avatar', done: 'Avatar mis à jour', removed: 'Avatar retiré' },
+  banner: { maxMb: 8, label: 'Bannière', done: 'Bannière mise à jour', removed: 'Image de bannière retirée' },
+}
 
-function AvatarUploader({ user, color }: { user: User; color: string }) {
-  const { uploadAvatar, removeAvatar } = useAuth()
+// Envoi d'image (avatar ou bannière) : bouton, glisser-déposer, aperçu immédiat, erreurs.
+function useImageUpload(kind: ImageKind) {
+  const { uploadImage, removeImage } = useAuth()
   const { toast } = useUi()
+  const spec = IMAGE_SPEC[kind]
   const input = useRef<HTMLInputElement>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [error, setError] = useState('')
@@ -56,41 +62,83 @@ function AvatarUploader({ user, color }: { user: User; color: string }) {
   const send = async (file: File | undefined) => {
     if (!file) return
     setError('')
-    if (!AVATAR_TYPES.includes(file.type)) return setError('Format non pris en charge : PNG, JPEG, GIF ou WebP.')
-    if (file.size > 4 * 1024 * 1024) return setError('Image trop lourde (4 Mo maximum).')
+    if (!IMAGE_TYPES.includes(file.type)) return setError('Format non pris en charge : PNG, JPEG, GIF ou WebP.')
+    if (file.size > spec.maxMb * 1024 * 1024) return setError(`Image trop lourde (${spec.maxMb} Mo maximum).`)
     const url = URL.createObjectURL(file)
     setPreview(url)
     setBusy(true)
-    try { await uploadAvatar(file); toast('Avatar mis à jour') }
-    catch (err) { setError(err instanceof ApiError ? (err.fields.avatar ?? err.message) : 'Envoi impossible.') }
+    try { await uploadImage(kind, file); toast(spec.done) }
+    catch (err) { setError(err instanceof ApiError ? (err.fields[kind] ?? err.message) : 'Envoi impossible.') }
     finally { setBusy(false); setPreview(null); URL.revokeObjectURL(url); if (input.current) input.current.value = '' }
   }
   const remove = async () => {
     setBusy(true); setError('')
-    try { await removeAvatar(); toast('Avatar retiré') }
+    try { await removeImage(kind); toast(spec.removed) }
     catch (err) { setError(err instanceof ApiError ? err.message : 'Suppression impossible.') }
     finally { setBusy(false) }
   }
-  const onDrop = (e: DragEvent) => { e.preventDefault(); setOver(false); send(e.dataTransfer.files[0]) }
+  const zone = {
+    onDragOver: (e: DragEvent) => { e.preventDefault(); setOver(true) },
+    onDragLeave: () => setOver(false),
+    onDrop: (e: DragEvent) => { e.preventDefault(); setOver(false); send(e.dataTransfer.files[0]) },
+  }
+  const fileInput = <input ref={input} type="file" accept={IMAGE_TYPES.join(',')} className="hidden" onChange={(e) => send(e.target.files?.[0])} />
+  return { spec, preview, error, busy, over, zone, fileInput, pick: () => input.current?.click(), remove }
+}
 
+const Spinner = () => <span className="size-6 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+
+function AvatarUploader({ user, color }: { user: User; color: string }) {
+  const up = useImageUpload('avatar')
   return (
     <div className="grid gap-1.5">
       <span className="text-[.88rem] font-semibold text-fg">Avatar</span>
-      <div onDragOver={(e) => { e.preventDefault(); setOver(true) }} onDragLeave={() => setOver(false)} onDrop={onDrop}
-        className={`flex flex-wrap items-center gap-4 rounded-xl border-2 border-dashed p-4 transition ${over ? 'border-accent bg-accent-soft' : 'border-line'}`}>
+      <div {...up.zone} className={`flex flex-wrap items-center gap-4 rounded-xl border-2 border-dashed p-4 transition ${up.over ? 'border-accent bg-accent-soft' : 'border-line'}`}>
         <div className="relative">
-          <Avatar name={user.username} color={color} src={preview ?? user.avatar} size="size-20 rounded-2xl text-3xl" />
-          {busy && <span className="absolute inset-0 grid place-items-center rounded-2xl bg-black/50"><span className="size-6 animate-spin rounded-full border-2 border-white/40 border-t-white" /></span>}
+          <Avatar name={user.username} color={color} src={up.preview ?? user.avatar} size="size-20 rounded-2xl text-3xl" />
+          {up.busy && <span className="absolute inset-0 grid place-items-center rounded-2xl bg-black/50"><Spinner /></span>}
         </div>
         <div className="grid gap-2">
           <div className="flex flex-wrap gap-2">
-            <button type="button" className="btn btn-primary btn-sm" disabled={busy} onClick={() => input.current?.click()}>{user.avatar ? "Changer l'image" : 'Envoyer une image'}</button>
-            {user.avatar && <button type="button" className="btn btn-ghost btn-sm" disabled={busy} onClick={remove}>Retirer</button>}
+            <button type="button" className="btn btn-primary btn-sm" disabled={up.busy} onClick={up.pick}>{user.avatar ? "Changer l'image" : 'Envoyer une image'}</button>
+            {user.avatar && <button type="button" className="btn btn-ghost btn-sm" disabled={up.busy} onClick={up.remove}>Retirer</button>}
           </div>
-          <span className="text-[.78rem] text-mute">Glisse une image ici ou clique sur le bouton. PNG, JPEG, GIF ou WebP, 4 Mo max. Elle est recadrée en carré.</span>
-          {error && <span role="alert" className="text-[.8rem] text-bad">{error}</span>}
+          <span className="text-[.78rem] text-mute">Glisse une image ici ou clique sur le bouton. PNG, JPEG, GIF ou WebP, 4 Mo max. Recadrée en carré.</span>
+          {up.error && <span role="alert" className="text-[.8rem] text-bad">{up.error}</span>}
         </div>
-        <input ref={input} type="file" accept={AVATAR_TYPES.join(',')} className="hidden" onChange={(e) => send(e.target.files?.[0])} />
+        {up.fileInput}
+      </div>
+    </div>
+  )
+}
+
+function BannerUploader({ user, preset, onPreset }: { user: User; preset: string; onPreset: (id: string) => void }) {
+  const up = useImageUpload('banner')
+  const image = up.preview ?? user.bannerImage
+  return (
+    <div className="grid gap-2">
+      <span className="text-[.88rem] font-semibold text-fg">Bannière</span>
+      <div {...up.zone} className={`relative grid aspect-[3/1] max-w-full place-items-center overflow-hidden rounded-xl border-2 border-dashed transition ${up.over ? 'border-accent' : 'border-line'}`}
+        style={{ background: bannerOf(preset, image) }}>
+        {up.busy ? <span className="grid size-full place-items-center bg-black/40"><Spinner /></span> : (
+          <div className="flex flex-wrap justify-center gap-2 rounded-full bg-black/45 p-1.5 backdrop-blur-sm">
+            <button type="button" className="btn btn-sm bg-white text-[#13181a] hover:bg-white/90" onClick={up.pick}>{user.bannerImage ? "Changer l'image" : 'Envoyer une image'}</button>
+            {user.bannerImage && <button type="button" className="btn btn-sm text-white hover:bg-white/15" onClick={up.remove}>Retirer</button>}
+          </div>
+        )}
+        {up.fileInput}
+      </div>
+      <span className="text-[.78rem] text-mute">Glisse une image sur la bannière ou clique sur le bouton. PNG, JPEG, GIF ou WebP, 8 Mo max. Recadrée au format 3:1 (1500 × 500 px), prends une image en largeur.</span>
+      {up.error && <span role="alert" className="text-[.8rem] text-bad">{up.error}</span>}
+
+      <span className="mt-1 text-[.82rem] font-semibold text-fg">Dégradé <span className="font-normal text-mute">{user.bannerImage ? '(utilisé si tu retires ton image)' : '(sans image)'}</span></span>
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+        {Object.entries(BANNERS).map(([id, b]) => (
+          <button key={id} type="button" aria-pressed={preset === id} onClick={() => onPreset(id)}
+            className={`grid gap-1 rounded-lg p-1 text-[.74rem] text-mute transition ${preset === id ? 'ring-2 ring-accent' : 'ring-1 ring-line hover:ring-mute'}`}>
+            <i className="block h-9 rounded-md" style={{ background: b.bg }} />{b.label}
+          </button>
+        ))}
       </div>
     </div>
   )
@@ -113,7 +161,7 @@ function PublicProfile({ user }: { user: User }) {
         footer={<>{dirty && <span className="mr-auto text-[.82rem] text-mute">Modifications non enregistrées</span>}<button className="btn btn-primary" disabled={busy || !dirty}>{busy ? 'Enregistrement…' : 'Enregistrer'}</button></>}>
         {/* Aperçu en direct */}
         <div className="overflow-hidden rounded-xl border border-line">
-          <div className="h-24" style={{ background: bannerOf(f.banner) }} />
+          <div className="h-24" style={{ background: bannerOf(f.banner, user.bannerImage) }} />
           <div className="flex items-end gap-3 px-4 pb-4">
             <Avatar name={user.username} color={f.color} src={user.avatar} size="size-16 rounded-2xl text-2xl" className="-mt-8 border-4 border-surface" />
             <div className="min-w-0 pb-0.5">
@@ -125,17 +173,7 @@ function PublicProfile({ user }: { user: User }) {
 
         <AvatarUploader user={user} color={f.color} />
 
-        <div className="grid gap-1.5">
-          <span className="text-[.88rem] font-semibold text-fg">Bannière</span>
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-            {Object.entries(BANNERS).map(([id, b]) => (
-              <button key={id} type="button" aria-pressed={f.banner === id} onClick={() => setF({ ...f, banner: id })}
-                className={`grid gap-1 rounded-lg p-1 text-[.74rem] text-mute transition ${f.banner === id ? 'ring-2 ring-accent' : 'ring-1 ring-line hover:ring-mute'}`}>
-                <i className="block h-9 rounded-md" style={{ background: b.bg }} />{b.label}
-              </button>
-            ))}
-          </div>
-        </div>
+        <BannerUploader user={user} preset={f.banner} onPreset={(banner) => setF({ ...f, banner })} />
 
         <div className="grid gap-1.5">
           <span className="text-[.88rem] font-semibold text-fg">Couleur de fond <span className="font-normal text-mute">(sans image, ou derrière une image transparente)</span></span>
