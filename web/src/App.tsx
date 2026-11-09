@@ -34,7 +34,7 @@ export default function App() {
     <ThemeProvider>
       <AuthProvider>
         <UiProvider>
-          <BrowserRouter>
+          <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <ScrollTop />
             <Routes>
               <Route element={<Layout />}>

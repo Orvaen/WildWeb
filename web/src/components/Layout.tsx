@@ -1,8 +1,9 @@
 import { useCallback, useState } from 'react'
-import { Link, Outlet } from 'react-router-dom'
+import { Link, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useUi } from '../context/UiContext'
 import AuthModal from './AuthModal'
+import ErrorBoundary from './ErrorBoundary'
 import Header from './Header'
 import PlayModal from './PlayModal'
 
@@ -62,10 +63,11 @@ function Toast() {
 export default function Layout() {
   const [menuOpen, setMenuOpenRaw] = useState(false)
   const setMenuOpen = useCallback((v: boolean) => setMenuOpenRaw(v), [])
+  const { pathname } = useLocation()
   return (
     <div className="min-h-dvh pb-16 md:pb-0">
       <Header menuOpen={menuOpen} setMenuOpen={setMenuOpen} />
-      <main><Outlet /></main>
+      <main><ErrorBoundary resetKey={pathname}><Outlet /></ErrorBoundary></main>
       <Footer />
       <TabBar onMenu={() => { scrollTo(0, 0); setMenuOpen(!menuOpen) }} />
       <AuthModal />

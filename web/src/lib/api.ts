@@ -53,13 +53,20 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   return data as T
 }
 
+// Complète les champs absents (API plus ancienne que le site, par exemple).
+function normalize<T extends Partial<User>>(u: T): T & PublicUser {
+  return { ...u, bio: u.bio ?? '', location: u.location ?? '', banner: u.banner || 'ocean', color: u.color || '#005ee0',
+    role: u.role || 'joueur', lastSeenAt: u.lastSeenAt ?? null } as T & PublicUser
+}
+const withUser = (r: AuthResponse): AuthResponse => ({ ...r, user: normalize(r.user) })
+
 export const api = {
   register: (username: string, email: string, password: string) =>
-    request<AuthResponse>('POST', '/auth/register', { username, email, password }),
+    request<AuthResponse>('POST', '/auth/register', { username, email, password }).then(withUser),
   login: (login: string, password: string, remember: boolean) =>
-    request<AuthResponse>('POST', '/auth/login', { login, password, remember }),
-  me: () => request<User>('GET', '/me'),
-  updateMe: (patch: ProfilePatch) => request<User>('PATCH', '/me', patch),
-  changePassword: (current: string, next: string) => request<AuthResponse>('POST', '/me/password', { current, new: next }),
-  profile: (username: string) => request<PublicUser>('GET', `/users/${encodeURIComponent(username)}`),
+    request<AuthResponse>('POST', '/auth/login', { login, password, remember }).then(withUser),
+  me: () => request<User>('GET', '/me').then(normalize),
+  updateMe: (patch: ProfilePatch) => request<User>('PATCH', '/me', patch).then(normalize),
+  changePassword: (current: string, next: string) => request<AuthResponse>('POST', '/me/password', { current, new: next }).then(withUser),
+  profile: (username: string) => request<PublicUser>('GET', `/users/${encodeURIComponent(username)}`).then(normalize),
 }
