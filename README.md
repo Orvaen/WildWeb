@@ -10,27 +10,35 @@ WildWeb/
 
 ## Lancer en développement
 
-Deux terminaux.
+Prérequis : Go 1.22 ou plus et Node 18 ou plus.
 
-**1. L'API** (Go 1.22 ou plus) :
-
-```bash
-cd api
-go mod tidy
-go run .
-```
-
-Elle écoute sur `http://127.0.0.1:8081` et crée `wildlink.db` au premier lancement.
-
-**2. Le site** (Node 18 ou plus) :
+Une seule commande, à la racine du projet :
 
 ```bash
-cd web
-npm install
 npm run dev
 ```
 
-Ouvre `http://localhost:5173`. En dev, Vite redirige `/api` vers l'API Go.
+Ou double-clic sur `run.cmd` (Windows), ou `./run.sh` (Linux, macOS, Git Bash).
+
+Le script `scripts/dev.mjs` :
+
+- installe les dépendances si elles manquent (`go mod tidy`, `npm install`) ;
+- choisit un port libre pour l'API, à partir de 8081 ;
+- garde un secret JWT de dev dans `api/.dev-secret`, pour rester connecté entre deux lancements ;
+- attend que l'API réponde, puis démarre le site et branche le proxy `/api` sur le bon port ;
+- affiche les logs des deux côtés, préfixés `[api]` et `[web]` ;
+- arrête tout avec un seul Ctrl+C.
+
+Ouvre ensuite l'adresse affichée par Vite (en général `http://localhost:5173`).
+
+### Lancer à la main
+
+```bash
+cd api && go run .          # API sur 127.0.0.1:8081
+cd web && npm run dev       # site sur http://localhost:5173
+```
+
+Si l'API n'est pas sur 8081, donne son port au site : `WL_API_PORT=8090 npm run dev`.
 
 ## Variables d'environnement de l'API
 

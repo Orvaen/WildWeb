@@ -41,7 +41,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   if (!res.ok) {
     // Pas de message de l'API : la requête n'a probablement pas atteint le serveur Go.
     const fallback = res.status >= 500
-      ? `Le serveur ne répond pas (erreur ${res.status}). Vérifie que l'API Go tourne sur le port 8081.`
+      ? `Le serveur ne répond pas (erreur ${res.status}). Vérifie que l'API Go tourne (lance « npm run dev » à la racine).`
       : `Erreur ${res.status} : réponse inattendue du serveur.`
     throw new ApiError(res.status, data.error ?? fallback, data.fields ?? {})
   }

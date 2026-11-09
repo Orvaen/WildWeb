@@ -7,6 +7,7 @@ export default defineConfig({
   server: {
     port: 5173,
     // En dev, /api part vers l'API Go : pas de souci de CORS.
-    proxy: { '/api': { target: 'http://127.0.0.1:8081', changeOrigin: true } },
+    // scripts/dev.mjs passe le port choisi dans WL_API_PORT.
+    proxy: { '/api': { target: `http://127.0.0.1:${process.env.WL_API_PORT ?? 8081}`, changeOrigin: true } },
   },
 })
