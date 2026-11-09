@@ -26,6 +26,7 @@ type User struct {
 	Bio          string     `json:"bio"`
 	Location     string     `json:"location"`
 	Banner       string     `json:"banner"`
+	Avatar       string     `json:"avatar"`
 	CreatedAt    time.Time  `json:"createdAt"`
 	LastSeenAt   *time.Time `json:"lastSeenAt"`
 	TokenVersion int        `json:"-"`
@@ -39,13 +40,14 @@ type PublicUser struct {
 	Bio        string     `json:"bio"`
 	Location   string     `json:"location"`
 	Banner     string     `json:"banner"`
+	Avatar     string     `json:"avatar"`
 	CreatedAt  time.Time  `json:"createdAt"`
 	LastSeenAt *time.Time `json:"lastSeenAt"`
 }
 
 func (u *User) Public() PublicUser {
 	return PublicUser{Username: u.Username, Color: u.Color, Role: u.Role, Bio: u.Bio, Location: u.Location,
-		Banner: u.Banner, CreatedAt: u.CreatedAt, LastSeenAt: u.LastSeenAt}
+		Banner: u.Banner, Avatar: u.Avatar, CreatedAt: u.CreatedAt, LastSeenAt: u.LastSeenAt}
 }
 
 // ProfileFields : ce que le joueur peut modifier lui-même.
@@ -83,6 +85,7 @@ CREATE TABLE IF NOT EXISTS users (
 		`location TEXT NOT NULL DEFAULT ''`,
 		`banner TEXT NOT NULL DEFAULT 'ocean'`,
 		`last_seen_at TIMESTAMP`,
+		`avatar TEXT NOT NULL DEFAULT ''`,
 	} {
 		if _, err := db.Exec(`ALTER TABLE users ADD COLUMN ` + col); err != nil && !strings.Contains(err.Error(), "duplicate column") {
 			return nil, err
@@ -93,13 +96,13 @@ CREATE TABLE IF NOT EXISTS users (
 
 func (s *Store) Close() error { return s.db.Close() }
 
-const userCols = `id, username, email, password_hash, color, lang, role, bio, location, banner, token_version, created_at, last_seen_at`
+const userCols = `id, username, email, password_hash, color, lang, role, bio, location, banner, avatar, token_version, created_at, last_seen_at`
 
 func scanUser(row interface{ Scan(...any) error }) (*User, error) {
 	var u User
 	var seen sql.NullTime
 	err := row.Scan(&u.ID, &u.Username, &u.Email, &u.PasswordHash, &u.Color, &u.Lang, &u.Role,
-		&u.Bio, &u.Location, &u.Banner, &u.TokenVersion, &u.CreatedAt, &seen)
+		&u.Bio, &u.Location, &u.Banner, &u.Avatar, &u.TokenVersion, &u.CreatedAt, &seen)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -138,6 +141,13 @@ func (s *Store) UpdateProfile(id int64, p ProfileFields) (*User, error) {
 		p.Username, strings.ToLower(p.Username), strings.ToLower(p.Email), p.Color, p.Lang, p.Bio, p.Location, p.Banner, id)
 	if err != nil {
 		return nil, uniqueErr(err)
+	}
+	return s.UserByID(id)
+}
+
+func (s *Store) SetAvatar(id int64, url string) (*User, error) {
+	if _, err := s.db.Exec(`UPDATE users SET avatar = ? WHERE id = ?`, url, id); err != nil {
+		return nil, err
 	}
 	return s.UserByID(id)
 }

@@ -1,6 +1,6 @@
-import { useState, type FormEvent, type ReactNode } from 'react'
+import { useRef, useState, type DragEvent, type FormEvent, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { Field, PageHead } from '../components/ui'
+import { Avatar, Field, PageHead } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
 import { useUi } from '../context/UiContext'
 import { BANNERS, PROFILE_COLORS, ROLE_LABEL, bannerOf } from '../data/game'
@@ -42,6 +42,60 @@ function useSave() {
   return { errors, busy, save }
 }
 
+const AVATAR_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp']
+
+function AvatarUploader({ user, color }: { user: User; color: string }) {
+  const { uploadAvatar, removeAvatar } = useAuth()
+  const { toast } = useUi()
+  const input = useRef<HTMLInputElement>(null)
+  const [preview, setPreview] = useState<string | null>(null)
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [over, setOver] = useState(false)
+
+  const send = async (file: File | undefined) => {
+    if (!file) return
+    setError('')
+    if (!AVATAR_TYPES.includes(file.type)) return setError('Format non pris en charge : PNG, JPEG, GIF ou WebP.')
+    if (file.size > 4 * 1024 * 1024) return setError('Image trop lourde (4 Mo maximum).')
+    const url = URL.createObjectURL(file)
+    setPreview(url)
+    setBusy(true)
+    try { await uploadAvatar(file); toast('Avatar mis à jour') }
+    catch (err) { setError(err instanceof ApiError ? (err.fields.avatar ?? err.message) : 'Envoi impossible.') }
+    finally { setBusy(false); setPreview(null); URL.revokeObjectURL(url); if (input.current) input.current.value = '' }
+  }
+  const remove = async () => {
+    setBusy(true); setError('')
+    try { await removeAvatar(); toast('Avatar retiré') }
+    catch (err) { setError(err instanceof ApiError ? err.message : 'Suppression impossible.') }
+    finally { setBusy(false) }
+  }
+  const onDrop = (e: DragEvent) => { e.preventDefault(); setOver(false); send(e.dataTransfer.files[0]) }
+
+  return (
+    <div className="grid gap-1.5">
+      <span className="text-[.88rem] font-semibold text-fg">Avatar</span>
+      <div onDragOver={(e) => { e.preventDefault(); setOver(true) }} onDragLeave={() => setOver(false)} onDrop={onDrop}
+        className={`flex flex-wrap items-center gap-4 rounded-xl border-2 border-dashed p-4 transition ${over ? 'border-accent bg-accent-soft' : 'border-line'}`}>
+        <div className="relative">
+          <Avatar name={user.username} color={color} src={preview ?? user.avatar} size="size-20 rounded-2xl text-3xl" />
+          {busy && <span className="absolute inset-0 grid place-items-center rounded-2xl bg-black/50"><span className="size-6 animate-spin rounded-full border-2 border-white/40 border-t-white" /></span>}
+        </div>
+        <div className="grid gap-2">
+          <div className="flex flex-wrap gap-2">
+            <button type="button" className="btn btn-primary btn-sm" disabled={busy} onClick={() => input.current?.click()}>{user.avatar ? "Changer l'image" : 'Envoyer une image'}</button>
+            {user.avatar && <button type="button" className="btn btn-ghost btn-sm" disabled={busy} onClick={remove}>Retirer</button>}
+          </div>
+          <span className="text-[.78rem] text-mute">Glisse une image ici ou clique sur le bouton. PNG, JPEG, GIF ou WebP, 4 Mo max. Elle est recadrée en carré.</span>
+          {error && <span role="alert" className="text-[.8rem] text-bad">{error}</span>}
+        </div>
+        <input ref={input} type="file" accept={AVATAR_TYPES.join(',')} className="hidden" onChange={(e) => send(e.target.files?.[0])} />
+      </div>
+    </div>
+  )
+}
+
 function PublicProfile({ user }: { user: User }) {
   const [f, setF] = useState({ color: user.color, banner: user.banner || 'ocean', bio: user.bio, location: user.location })
   const { errors, busy, save } = useSave()
@@ -61,13 +115,15 @@ function PublicProfile({ user }: { user: User }) {
         <div className="overflow-hidden rounded-xl border border-line">
           <div className="h-24" style={{ background: bannerOf(f.banner) }} />
           <div className="flex items-end gap-3 px-4 pb-4">
-            <span className="-mt-8 grid size-16 place-items-center rounded-2xl border-4 border-surface text-2xl font-extrabold text-white" style={{ background: f.color }}>{user.username[0]?.toUpperCase()}</span>
+            <Avatar name={user.username} color={f.color} src={user.avatar} size="size-16 rounded-2xl text-2xl" className="-mt-8 border-4 border-surface" />
             <div className="min-w-0 pb-0.5">
               <b className="block text-fg">{user.username}</b>
               <span className="block truncate text-[.82rem] text-mute">{f.bio || 'Ta bio apparaîtra ici.'}</span>
             </div>
           </div>
         </div>
+
+        <AvatarUploader user={user} color={f.color} />
 
         <div className="grid gap-1.5">
           <span className="text-[.88rem] font-semibold text-fg">Bannière</span>
@@ -82,7 +138,7 @@ function PublicProfile({ user }: { user: User }) {
         </div>
 
         <div className="grid gap-1.5">
-          <span className="text-[.88rem] font-semibold text-fg">Couleur de l'avatar</span>
+          <span className="text-[.88rem] font-semibold text-fg">Couleur de fond <span className="font-normal text-mute">(sans image, ou derrière une image transparente)</span></span>
           <div className="flex flex-wrap gap-2">
             {PROFILE_COLORS.map((c) => (
               <button key={c} type="button" aria-label={`Couleur ${c}`} aria-pressed={f.color === c} onClick={() => setF({ ...f, color: c })}
@@ -207,7 +263,7 @@ export default function Account() {
       <div className="grid items-start gap-6 md:grid-cols-[230px_1fr]">
         <nav aria-label="Sections" className="card grid gap-0.5 p-2 md:sticky md:top-20">
           <div className="mb-1 flex items-center gap-3 rounded-lg px-2 py-2.5">
-            <span className="grid size-9 shrink-0 place-items-center rounded-xl font-extrabold text-white" style={{ background: user.color }}>{user.username[0]?.toUpperCase()}</span>
+            <Avatar name={user.username} color={user.color} src={user.avatar} size="size-9 rounded-xl" />
             <div className="min-w-0"><b className="block truncate text-fg">{user.username}</b><span className="text-[.78rem] text-mute">{ROLE_LABEL[user.role] ?? user.role}</span></div>
           </div>
           {SECTIONS.map(([k, l, d]) => (

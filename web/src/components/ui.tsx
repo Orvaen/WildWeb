@@ -105,8 +105,10 @@ export function Chips<T extends string>({ value, options, onChange }: { value: T
   )
 }
 
-export function Avatar({ name, color, size = 'size-10 text-base' }: { name: string; color: string; size?: string }) {
-  return <span className={`grid shrink-0 place-items-center rounded-xl font-extrabold text-white ${size}`} style={{ background: color }}>{name[0]?.toUpperCase()}</span>
+// Avatar du joueur : son image s'il en a envoyé une, sinon l'initiale sur sa couleur.
+export function Avatar({ name, color, src, size = 'size-10 text-base rounded-xl', className = '' }: { name: string; color: string; src?: string; size?: string; className?: string }) {
+  if (src) return <img src={src} alt="" className={`shrink-0 object-cover ${size} ${className}`} style={{ background: color }} />
+  return <span className={`grid shrink-0 place-items-center font-extrabold text-white ${size} ${className}`} style={{ background: color }}>{name[0]?.toUpperCase()}</span>
 }
 
 export function Gem() {

@@ -46,6 +46,7 @@ Si l'API n'est pas sur 8081, donne son port au site : `WL_API_PORT=8090 npm run 
 | --- | --- | --- |
 | `WL_ADDR` | `127.0.0.1:8081` | Adresse d'écoute |
 | `WL_DB` | `wildlink.db` | Fichier SQLite |
+| `WL_UPLOADS` | `uploads` | Dossier des fichiers envoyés (avatars) |
 | `WL_JWT_SECRET` | aléatoire | Clé de signature des jetons. **À fixer en production**, sinon tout le monde est déconnecté à chaque redémarrage. |
 | `WL_WEB_ORIGIN` | `http://localhost:5173` | Origine autorisée (CORS) si le site n'est pas servi sur le même domaine |
 
@@ -60,7 +61,10 @@ Générer un secret : `openssl rand -hex 32`
 | `GET` | `/api/me` | Bearer | Compte connecté |
 | `PATCH` | `/api/me` | Bearer | `{username?, email?, color?, lang?}` |
 | `POST` | `/api/me/password` | Bearer | `{current, new}` → nouveau jeton, les anciens sont révoqués |
+| `POST` | `/api/me/avatar` | Bearer | Envoi d'avatar (multipart, champ `avatar`, 4 Mo max) : recadré en carré 256 px, réencodé en PNG |
+| `DELETE` | `/api/me/avatar` | Bearer | Retire l'avatar |
 | `GET` | `/api/users/{pseudo}` | — | Profil public |
+| `GET` | `/api/uploads/…` | — | Fichiers envoyés (avatars) |
 
 Erreurs : `{"error": "…"}`, et pour les formulaires `{"error": "…", "fields": {"champ": "message"}}` (statut 422).
 

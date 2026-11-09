@@ -7,3 +7,4 @@ api/*.db-shm
 api/*.db-wal
 .env
 api/.dev-secret
+api/uploads/

@@ -142,7 +142,8 @@ async function cleanupStale() {
 if (!has('go')) fail("Go n'est pas installé ou pas dans le PATH (https://go.dev/dl/).")
 if (!has('npm')) fail("Node/npm n'est pas installé ou pas dans le PATH (https://nodejs.org/).")
 
-if (!existsSync(join(API, 'go.sum'))) runSync('run', 'go', ['mod', 'tidy'], API)
+// Toujours : récupère les nouvelles dépendances Go ajoutées depuis le dernier lancement (rapide si rien n'a changé).
+runSync('run', 'go', ['mod', 'tidy'], API)
 if (!existsSync(join(WEB, 'node_modules'))) runSync('run', 'npm', ['install'], WEB)
 
 const secretFile = join(API, '.dev-secret')

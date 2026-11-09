@@ -10,6 +10,8 @@ type AuthState = {
   logout: () => void
   updateProfile: (patch: Parameters<typeof api.updateMe>[0]) => Promise<User>
   changePassword: (current: string, next: string) => Promise<void>
+  uploadAvatar: (file: File) => Promise<User>
+  removeAvatar: () => Promise<User>
 }
 
 const AuthCtx = createContext<AuthState | null>(null)
@@ -59,6 +61,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(u)
       return u
     },
+    uploadAvatar: async (file) => { const u = await api.uploadAvatar(file); setUser(u); return u },
+    removeAvatar: async () => { const u = await api.deleteAvatar(); setUser(u); return u },
     changePassword: async (current, next) => {
       // L'API révoque les anciens jetons et en renvoie un nouveau.
       const r = await api.changePassword(current, next)

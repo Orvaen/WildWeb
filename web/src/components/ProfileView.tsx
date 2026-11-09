@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { ROLE_LABEL, bannerOf } from '../data/game'
 import type { PublicUser } from '../lib/api'
+import { Avatar } from './ui'
 import { ago, date, isOnline } from '../lib/format'
 
 // Profil façon forum : bannière, avatar, statistiques, onglets, colonne « À propos » et fil d'activité.
@@ -102,9 +103,7 @@ export default function ProfileView({ p, own, votes = 0 }: { p: PublicUser; own:
         </div>
         <div className="flex flex-wrap items-end gap-x-5 gap-y-3 px-5 pb-5 sm:px-7">
           <div className="relative -mt-14 sm:-mt-16">
-            <span className="grid size-28 place-items-center rounded-[22px] border-[5px] border-surface text-[2.6rem] font-extrabold text-white shadow-lg sm:size-32" style={{ background: p.color }}>
-              {p.username[0]?.toUpperCase()}
-            </span>
+            <Avatar name={p.username} color={p.color} src={p.avatar} size="size-28 rounded-[22px] text-[2.6rem] sm:size-32" className="border-[5px] border-surface shadow-lg" />
             <span title={online ? 'En ligne' : 'Hors ligne'} className={`absolute right-1 bottom-1 size-5 rounded-full border-[3px] border-surface ${online ? 'bg-good' : 'bg-mute'}`} />
           </div>
           <div className="min-w-0 grow pt-2">

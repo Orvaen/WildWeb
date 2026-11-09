@@ -11,18 +11,20 @@ import (
 )
 
 // apiVersion change à chaque évolution du format des données renvoyées au site.
-const apiVersion = "0.2.0"
+const apiVersion = "0.3.0"
 
 type Server struct {
 	store   *Store
 	secret  []byte
 	limiter *Limiter
 	origins map[string]bool
+	uploads string // dossier des fichiers envoyés (avatars…)
 }
 
 func main() {
 	addr := env("WL_ADDR", "127.0.0.1:8081")
 	dbPath := env("WL_DB", "wildlink.db")
+	uploads := env("WL_UPLOADS", "uploads")
 
 	secret := os.Getenv("WL_JWT_SECRET")
 	if secret == "" {
@@ -45,6 +47,7 @@ func main() {
 		secret:  []byte(secret),
 		limiter: NewLimiter(10, time.Minute),
 		origins: map[string]bool{env("WL_WEB_ORIGIN", "http://localhost:5173"): true},
+		uploads: uploads,
 	}
 
 	mux := http.NewServeMux()
@@ -58,6 +61,9 @@ func main() {
 	mux.HandleFunc("PATCH /api/me", s.auth(s.handleUpdateMe))
 	mux.HandleFunc("POST /api/me/password", s.auth(s.handleChangePassword))
 	mux.HandleFunc("GET /api/users/{username}", s.handlePublicProfile)
+	mux.HandleFunc("POST /api/me/avatar", s.limit(s.auth(s.handleUploadAvatar)))
+	mux.HandleFunc("DELETE /api/me/avatar", s.auth(s.handleDeleteAvatar))
+	mux.Handle("GET /api/uploads/", s.uploadsHandler())
 
 	srv := &http.Server{
 		Addr:              addr,
