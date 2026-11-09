@@ -11,7 +11,7 @@ import (
 )
 
 // apiVersion change à chaque évolution du format des données renvoyées au site.
-const apiVersion = "0.4.0"
+const apiVersion = "0.4.1"
 
 type Server struct {
 	store   *Store
@@ -19,6 +19,8 @@ type Server struct {
 	limiter *Limiter
 	origins map[string]bool
 	uploads string // dossier des fichiers envoyés (avatars…)
+	// trustCloudflare : lire l'IP réelle dans CF-Connecting-IP (site derrière le proxy Cloudflare).
+	trustCloudflare bool
 }
 
 func main() {
@@ -48,6 +50,8 @@ func main() {
 		limiter: NewLimiter(10, time.Minute),
 		origins: map[string]bool{env("WL_WEB_ORIGIN", "http://localhost:5173"): true},
 		uploads: uploads,
+
+		trustCloudflare: os.Getenv("WL_TRUST_CLOUDFLARE") == "1",
 	}
 
 	mux := http.NewServeMux()

@@ -83,6 +83,33 @@ Erreurs : `{"error": "…"}`, et pour les formulaires `{"error": "…", "fields"
 
 Boutique (pas de paiement), votes (compteur local au navigateur), classement et statistiques du profil. Ce sont les prochaines routes à ajouter à l'API.
 
+## Mise en ligne (wildlink.arkerion.dev)
+
+Le dossier `deploy/` installe tout sur un serveur Ubuntu ou Debian neuf, x86_64 ou ARM (par exemple une VM gratuite Oracle Cloud) :
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Orvaen/WildWeb/main/deploy/install.sh -o install.sh
+sudo bash install.sh wildlink.arkerion.dev
+```
+
+Le script installe Go, Node et Caddy, ouvre les ports 80 et 443, construit le site et l'API, crée le service `wildlink-api` et configure le HTTPS. Avant de le lancer, l'enregistrement DNS `A wildlink → IP du serveur` doit exister chez Cloudflare, en nuage gris (DNS only).
+
+| Fichier | Rôle |
+| --- | --- |
+| `deploy/install.sh` | Première installation (peut être relancé sans perte) |
+| `deploy/update.sh` | Mise à jour : `sudo bash /opt/wildweb/deploy/update.sh` |
+| `deploy/build.sh` | Construit `web/dist` et `api/wildlink-api` |
+| `deploy/Caddyfile` | HTTPS, `/api` vers l'API Go, le reste vers le site React |
+| `deploy/wildlink-api.service` | Service systemd de l'API |
+
+Sur le serveur :
+
+- configuration et secret JWT : `/etc/wildlink/wildlink.env` ;
+- base de données et images envoyées : `/var/lib/wildlink` (à sauvegarder) ;
+- logs de l'API : `journalctl -u wildlink-api -f`.
+
+Pour passer derrière le proxy Cloudflare (nuage orange), mets `WL_TRUST_CLOUDFLARE=1` dans `/etc/wildlink/wildlink.env`, redémarre l'API (`sudo systemctl restart wildlink-api`) et choisis le mode SSL/TLS **Full (strict)** dans Cloudflare.
+
 ## Build de production
 
 ```bash

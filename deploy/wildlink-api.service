@@ -1,0 +1,23 @@
+[Unit]
+Description=API Wild Link
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=wildlink
+Group=wildlink
+WorkingDirectory=/var/lib/wildlink
+EnvironmentFile=/etc/wildlink/wildlink.env
+ExecStart=/opt/wildweb/api/wildlink-api
+Restart=always
+RestartSec=2
+
+# Durcissement : l'API ne peut écrire que dans ses données.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/wildlink
+
+[Install]
+WantedBy=multi-user.target

@@ -61,6 +61,32 @@ func logRequests(next http.Handler) http.Handler {
 	})
 }
 
+// clientIP renvoie l'IP du joueur. Derrière Caddy, la connexion vient de 127.0.0.1 :
+// on lit alors l'IP transmise par le proxy. Ces en-têtes ne sont crus que si la requête
+// arrive par la boucle locale, sinon n'importe qui pourrait les inventer.
+func (s *Server) clientIP(r *http.Request) string {
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		host = r.RemoteAddr
+	}
+	if ip := net.ParseIP(host); ip == nil || !ip.IsLoopback() {
+		return host
+	}
+	if s.trustCloudflare {
+		if v := strings.TrimSpace(r.Header.Get("CF-Connecting-IP")); net.ParseIP(v) != nil {
+			return v
+		}
+	}
+	// Caddy ajoute l'IP de son client en dernier dans X-Forwarded-For.
+	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+		parts := strings.Split(xff, ",")
+		if v := strings.TrimSpace(parts[len(parts)-1]); net.ParseIP(v) != nil {
+			return v
+		}
+	}
+	return host
+}
+
 // Limiter : fenêtre fixe par IP, contre le bourrinage des mots de passe.
 type Limiter struct {
 	mu     sync.Mutex
@@ -96,11 +122,7 @@ func (l *Limiter) Allow(key string) bool {
 
 func (s *Server) limit(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ip, _, err := net.SplitHostPort(r.RemoteAddr)
-		if err != nil {
-			ip = r.RemoteAddr
-		}
-		if !s.limiter.Allow(ip) {
+		if !s.limiter.Allow(s.clientIP(r)) {
 			writeError(w, http.StatusTooManyRequests, "Trop de tentatives, réessaie dans une minute.")
 			return
 		}
