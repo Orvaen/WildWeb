@@ -58,7 +58,7 @@ export default function Header({ menuOpen, setMenuOpen }: { menuOpen: boolean; s
         <div className="flex items-center gap-2 md:justify-self-end">
           <ThemeButton />
           {user ? (
-            <button onClick={() => navigate('/compte')} className="btn btn-ghost hidden !py-1 !pl-1 md:inline-flex">
+            <button onClick={() => navigate(`/joueur/${user.username}`)} className="btn btn-ghost hidden !py-1 !pl-1 md:inline-flex">
               <Avatar name={user.username} color={user.color} size="size-6 text-[.7rem] rounded-full" />
               {user.username}
             </button>

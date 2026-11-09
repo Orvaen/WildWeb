@@ -9,12 +9,14 @@ import (
 	"strings"
 	"time"
 	"unicode"
+	"unicode/utf8"
 )
 
 var (
 	reUsername = regexp.MustCompile(`^[A-Za-z0-9_-]{3,16}$`)
 	reColor    = regexp.MustCompile(`^#[0-9a-fA-F]{6}$`)
 	langs      = map[string]bool{"fr": true, "en": true, "es": true}
+	banners    = map[string]bool{"ocean": true, "foret": true, "braise": true, "crepuscule": true, "glace": true, "nuit": true}
 )
 
 type authResponse struct {
@@ -131,41 +133,62 @@ func (s *Server) handleUpdateMe(w http.ResponseWriter, r *http.Request) {
 		Email    *string `json:"email"`
 		Color    *string `json:"color"`
 		Lang     *string `json:"lang"`
+		Bio      *string `json:"bio"`
+		Location *string `json:"location"`
+		Banner   *string `json:"banner"`
 	}
 	if !readJSON(w, r, &in) {
 		return
 	}
-	name, email, color, lang := u.Username, u.Email, u.Color, u.Lang
+	p := ProfileFields{Username: u.Username, Email: u.Email, Color: u.Color, Lang: u.Lang, Bio: u.Bio, Location: u.Location, Banner: u.Banner}
 	errs := fieldErrors{}
 	if in.Username != nil {
-		name = strings.TrimSpace(*in.Username)
-		if !reUsername.MatchString(name) {
+		p.Username = strings.TrimSpace(*in.Username)
+		if !reUsername.MatchString(p.Username) {
 			errs["username"] = "3 à 16 caractères : lettres, chiffres, _ ou -."
 		}
 	}
 	if in.Email != nil {
-		email = strings.TrimSpace(*in.Email)
-		if !validEmail(email) {
+		p.Email = strings.TrimSpace(*in.Email)
+		if !validEmail(p.Email) {
 			errs["email"] = "Adresse e-mail invalide."
 		}
 	}
 	if in.Color != nil {
-		color = *in.Color
-		if !reColor.MatchString(color) {
+		p.Color = *in.Color
+		if !reColor.MatchString(p.Color) {
 			errs["color"] = "Couleur invalide."
 		}
 	}
 	if in.Lang != nil {
-		lang = *in.Lang
-		if !langs[lang] {
+		p.Lang = *in.Lang
+		if !langs[p.Lang] {
 			errs["lang"] = "Langue non prise en charge."
+		}
+	}
+	if in.Bio != nil {
+		p.Bio = strings.TrimSpace(*in.Bio)
+		if utf8.RuneCountInString(p.Bio) > 280 {
+			errs["bio"] = "280 caractères maximum."
+		}
+	}
+	if in.Location != nil {
+		p.Location = strings.TrimSpace(*in.Location)
+		if utf8.RuneCountInString(p.Location) > 40 {
+			errs["location"] = "40 caractères maximum."
+		}
+	}
+	if in.Banner != nil {
+		p.Banner = *in.Banner
+		if !banners[p.Banner] {
+			errs["banner"] = "Bannière inconnue."
 		}
 	}
 	if len(errs) > 0 {
 		writeFieldErrors(w, errs)
 		return
 	}
-	updated, err := s.store.UpdateProfile(u.ID, name, email, color, lang)
+	updated, err := s.store.UpdateProfile(u.ID, p)
 	switch {
 	case errors.Is(err, ErrUsernameTaken):
 		writeFieldErrors(w, fieldErrors{"username": "Ce pseudo est déjà pris."})

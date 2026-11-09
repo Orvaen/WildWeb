@@ -30,7 +30,7 @@ function LoginForm() {
       const u = await login(id.trim(), pw, remember)
       closeAuth()
       toast(`Bienvenue ${u.username} !`)
-      navigate('/compte')
+      navigate(`/joueur/${u.username}`)
     } catch (err) {
       setErrors({ form: err instanceof ApiError ? err.message : 'Erreur inattendue.' })
     } finally {

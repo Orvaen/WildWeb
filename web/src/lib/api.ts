@@ -7,10 +7,15 @@ export type User = {
   color: string
   lang: 'fr' | 'en' | 'es'
   role: string
+  bio: string
+  location: string
+  banner: string
   createdAt: string
+  lastSeenAt: string | null
 }
 
-export type PublicUser = Pick<User, 'username' | 'color' | 'role' | 'createdAt'>
+export type PublicUser = Pick<User, 'username' | 'color' | 'role' | 'bio' | 'location' | 'banner' | 'createdAt' | 'lastSeenAt'>
+export type ProfilePatch = Partial<Pick<User, 'username' | 'email' | 'color' | 'lang' | 'bio' | 'location' | 'banner'>>
 
 export type AuthResponse = { token: string; expiresAt: string; user: User }
 
@@ -54,7 +59,7 @@ export const api = {
   login: (login: string, password: string, remember: boolean) =>
     request<AuthResponse>('POST', '/auth/login', { login, password, remember }),
   me: () => request<User>('GET', '/me'),
-  updateMe: (patch: Partial<Pick<User, 'username' | 'email' | 'color' | 'lang'>>) => request<User>('PATCH', '/me', patch),
+  updateMe: (patch: ProfilePatch) => request<User>('PATCH', '/me', patch),
   changePassword: (current: string, next: string) => request<AuthResponse>('POST', '/me/password', { current, new: next }),
   profile: (username: string) => request<PublicUser>('GET', `/users/${encodeURIComponent(username)}`),
 }

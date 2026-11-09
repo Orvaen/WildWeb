@@ -69,3 +69,16 @@ export const tierOf = (elo: number): [string, string] =>
   elo >= 2000 ? ['Maître', 'var(--accent)'] : elo >= 1800 ? ['Diamant', '#3fa4c9'] : elo >= 1600 ? ['Or', '#c9961a'] : elo >= 1400 ? ['Argent', '#8a94a3'] : ['Bronze', '#b06b3a']
 
 export const PROFILE_COLORS = ['#005ee0', '#0284c7', '#1f9a55', '#c4372b', '#c9961a', '#7c4dcc', '#13181a']
+
+// Bannières de profil (identifiants partagés avec l'API)
+export const BANNERS: Record<string, { label: string; bg: string }> = {
+  ocean: { label: 'Océan', bg: 'linear-gradient(120deg,#0b3d91 0%,#005ee0 45%,#38bdf8 100%)' },
+  foret: { label: 'Forêt', bg: 'linear-gradient(120deg,#0f3d2e 0%,#1f7a4d 50%,#8fd16a 100%)' },
+  braise: { label: 'Braise', bg: 'linear-gradient(120deg,#3b0d0d 0%,#b23a1e 50%,#f2a35e 100%)' },
+  crepuscule: { label: 'Crépuscule', bg: 'linear-gradient(120deg,#2a1a5e 0%,#7c4dcc 50%,#f28fb0 100%)' },
+  glace: { label: 'Glace', bg: 'linear-gradient(120deg,#a9d8f5 0%,#dff3ff 50%,#8fb8de 100%)' },
+  nuit: { label: 'Nuit', bg: 'linear-gradient(120deg,#05070a 0%,#18202b 55%,#2f3d55 100%)' },
+}
+export const bannerOf = (id: string) => (BANNERS[id] ?? BANNERS.ocean).bg
+
+export const ROLE_LABEL: Record<string, string> = { joueur: 'Joueur', moderateur: 'Modérateur', admin: 'Administrateur', fondateur: 'Fondateur' }

@@ -27,6 +27,12 @@ func (s *Server) auth(next http.HandlerFunc) http.HandlerFunc {
 			writeError(w, http.StatusUnauthorized, "Session expirée, reconnecte-toi.")
 			return
 		}
+		// « Vu dernièrement » : une écriture par minute au plus.
+		if u.LastSeenAt == nil || time.Since(*u.LastSeenAt) > time.Minute {
+			s.store.TouchLastSeen(u.ID)
+			now := time.Now().UTC()
+			u.LastSeenAt = &now
+		}
 		next(w, r.WithContext(context.WithValue(r.Context(), ctxKey{}, u)))
 	}
 }

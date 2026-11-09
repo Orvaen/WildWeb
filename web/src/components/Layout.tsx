@@ -38,7 +38,7 @@ function TabBar({ onMenu }: { onMenu: () => void }) {
   return (
     <nav aria-label="Raccourcis" className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-line px-2 pt-1.5 pb-[calc(6px+env(safe-area-inset-bottom))] backdrop-blur-md md:hidden" style={{ background: 'var(--hdr)' }}>
       {user ? (
-        <Link to="/compte" className={cls}><svg viewBox="0 0 16 16" className={icon}><path d="M8 1a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7zM1.5 15c0-3 2.9-5 6.5-5s6.5 2 6.5 5z" /></svg>Profil</Link>
+        <Link to={`/joueur/${user.username}`} className={cls}><svg viewBox="0 0 16 16" className={icon}><path d="M8 1a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7zM1.5 15c0-3 2.9-5 6.5-5s6.5 2 6.5 5z" /></svg>Profil</Link>
       ) : (
         <button onClick={() => openAuth('login')} className={cls}><svg viewBox="0 0 16 16" className={icon}><path d="M8 1a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7zM1.5 15c0-3 2.9-5 6.5-5s6.5 2 6.5 5z" /></svg>Connexion</button>
       )}
