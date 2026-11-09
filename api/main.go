@@ -10,6 +10,9 @@ import (
 	"time"
 )
 
+// apiVersion change à chaque évolution du format des données renvoyées au site.
+const apiVersion = "0.2.0"
+
 type Server struct {
 	store   *Store
 	secret  []byte
@@ -46,7 +49,8 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/health", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+		// app et pid permettent au script de lancement de retrouver une ancienne instance oubliée.
+		writeJSON(w, http.StatusOK, map[string]any{"status": "ok", "app": "wildlink-api", "version": apiVersion, "pid": os.Getpid()})
 	})
 	mux.HandleFunc("POST /api/auth/register", s.limit(s.handleRegister))
 	mux.HandleFunc("POST /api/auth/login", s.limit(s.handleLogin))
@@ -62,7 +66,7 @@ func main() {
 		ReadTimeout:       10 * time.Second,
 		WriteTimeout:      10 * time.Second,
 	}
-	log.Printf("API Wild Link sur %s (base : %s)", addr, dbPath)
+	log.Printf("API Wild Link v%s sur %s (base : %s)", apiVersion, addr, dbPath)
 	log.Fatal(srv.ListenAndServe())
 }
 

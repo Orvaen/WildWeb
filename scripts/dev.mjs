@@ -7,7 +7,7 @@
 // - garde un secret JWT de dev dans api/.dev-secret pour rester connecté entre deux lancements
 // - attend que l'API réponde avant de démarrer le site
 
-import { spawn, spawnSync } from 'node:child_process'
+import { execSync, spawn, spawnSync } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import net from 'node:net'
@@ -54,7 +54,11 @@ async function waitHealth(port, child, timeoutMs = 120_000) {
     if (child.exitCode !== null) fail("L'API s'est arrêtée au démarrage (voir les lignes [api] au-dessus).")
     try {
       const r = await fetch(`http://127.0.0.1:${port}/api/health`)
-      if (r.ok) return
+      if (r.ok) {
+        const h = await r.json().catch(() => ({}))
+        if (h.version) say('run', `API v${h.version} prête.`)
+        return
+      }
     } catch { /* pas encore prête */ }
     await new Promise((r) => setTimeout(r, 400))
   }
@@ -84,6 +88,56 @@ function kill(child) {
   else child.kill('SIGTERM')
 }
 
+// ---------- Nettoyage des anciennes instances ----------
+// Un Ctrl+C mal transmis peut laisser tourner l'API ou Vite en arrière-plan. On les retrouve et on les arrête.
+
+function pidOnPort(port) {
+  try {
+    if (WIN) {
+      const out = execSync('netstat -ano -p tcp', { encoding: 'utf8' })
+      const re = new RegExp(`:${port}\\s+\\S+\\s+LISTENING\\s+(\\d+)`)
+      for (const line of out.split(/\r?\n/)) { const m = line.match(re); if (m) return Number(m[1]) }
+    } else {
+      const out = execSync(`lsof -ti tcp:${port} -sTCP:LISTEN`, { encoding: 'utf8' }).trim()
+      if (out) return Number(out.split('\n')[0])
+    }
+  } catch { /* outil absent ou rien sur ce port */ }
+  return null
+}
+
+function killPid(pid) {
+  if (!pid || pid === process.pid) return
+  try {
+    if (WIN) spawnSync('taskkill', ['/pid', String(pid), '/T', '/F'], { stdio: 'ignore' })
+    else process.kill(pid, 'SIGTERM')
+  } catch { /* déjà arrêté */ }
+}
+
+async function probe(url) {
+  try {
+    const r = await fetch(url, { signal: AbortSignal.timeout(700) })
+    return { ok: r.ok, text: await r.text() }
+  } catch { return null }
+}
+
+async function cleanupStale() {
+  for (let port = 8080; port <= 8090; port++) {
+    const r = await probe(`http://127.0.0.1:${port}/api/health`)
+    if (!r?.ok || !r.text.includes('"status"')) continue
+    let pid = null
+    try { pid = JSON.parse(r.text).pid ?? null } catch { /* ancienne version sans pid */ }
+    pid ??= pidOnPort(port)
+    if (pid) { killPid(pid); say('run', `Ancienne API arrêtée sur le port ${port} (PID ${pid}).`) }
+    else say('err', `Une ancienne API tourne sur le port ${port} mais son PID est introuvable : ferme-la à la main.`)
+  }
+  const site = await probe('http://127.0.0.1:5173/')
+  if (site?.text.includes('<title>Wild Link</title>')) {
+    const pid = pidOnPort(5173)
+    if (pid) { killPid(pid); say('run', `Ancien serveur du site arrêté (PID ${pid}).`) }
+  }
+  await new Promise((r) => setTimeout(r, 500))
+}
+
 // ---------- Vérifications ----------
 if (!has('go')) fail("Go n'est pas installé ou pas dans le PATH (https://go.dev/dl/).")
 if (!has('npm')) fail("Node/npm n'est pas installé ou pas dans le PATH (https://nodejs.org/).")
@@ -96,6 +150,7 @@ if (!existsSync(secretFile)) writeFileSync(secretFile, randomBytes(32).toString(
 const secret = process.env.WL_JWT_SECRET || readFileSync(secretFile, 'utf8').trim()
 
 // ---------- Lancement ----------
+await cleanupStale()
 const apiPort = await freePort(Number(process.env.WL_API_PORT) || 8081)
 if (apiPort !== 8081) say('run', `Port 8081 occupé, l'API utilise le port ${apiPort}.`)
 
