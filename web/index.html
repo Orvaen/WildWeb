@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content="Wild Link, le MMO de capture en ligne joué par toute une région." />
+    <link rel="icon" href="/logo.svg" type="image/svg+xml" />
+    <title>Wild Link</title>
+    <script>
+      // Applique le thème avant le premier rendu pour éviter un flash.
+      try {
+        var t = localStorage.getItem('wl.theme');
+        if (!t) t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

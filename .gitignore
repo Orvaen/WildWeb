@@ -1,0 +1,8 @@
+node_modules/
+web/dist/
+api/wildlink-api
+api/wildlink-api.exe
+api/*.db
+api/*.db-shm
+api/*.db-wal
+.env

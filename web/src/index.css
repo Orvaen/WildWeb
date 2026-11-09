@@ -1,0 +1,110 @@
+@import "tailwindcss";
+
+/* Le thème est porté par data-theme sur <html> (voir ThemeContext). */
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--bg-2);
+  --color-raised: var(--bg-3);
+  --color-line: var(--line);
+  --color-fg: var(--fg);
+  --color-text: var(--text);
+  --color-mute: var(--mute);
+  --color-accent: var(--accent);
+  --color-accent-hi: var(--accent-hi);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-soft: var(--accent-soft);
+  --color-link: var(--link);
+  --color-sky: var(--sky);
+  --color-sky-soft: var(--sky-soft);
+  --color-good: var(--good);
+  --color-warn: var(--warn);
+  --color-bad: var(--bad);
+  --color-gold: #c9961a;
+  --color-silver: #8a94a3;
+  --color-bronze: #b06b3a;
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+:root {
+  --bg: #f5f6f3; --bg-2: #ffffff; --bg-3: #eceee9; --line: #dfe3dc;
+  --fg: #13181a; --text: #3b4448; --mute: #6a7478;
+  --accent: #005ee0; --accent-hi: #0a52bd; --accent-fg: #ffffff; --accent-soft: rgba(0, 94, 224, .10);
+  --link: #005ee0; --sky: #0284c7; --sky-soft: rgba(56, 189, 248, .14);
+  --sel: rgba(0, 94, 224, .16);
+  --hero-a: rgba(0, 94, 224, .18); --hero-b: rgba(56, 189, 248, .16); --dots: rgba(19, 24, 26, .08);
+  --hdr: rgba(245, 246, 243, .86); --footer: #eceee9; --scrim: rgba(19, 24, 26, .45);
+  --good: #1f9a55; --warn: #c98a12; --bad: #d14343;
+  color-scheme: light;
+}
+[data-theme="dark"] {
+  --bg: #0f1214; --bg-2: #161a1d; --bg-3: #1f2528; --line: #293034;
+  --fg: #f1f5f4; --text: #c6cfcd; --mute: #8a9592;
+  --accent: #2f7bf0; --accent-hi: #4a8ff5; --accent-fg: #ffffff; --accent-soft: rgba(47, 123, 240, .16);
+  --link: #6aa6ff; --sky: #56c3f5; --sky-soft: rgba(56, 189, 248, .14);
+  --sel: rgba(92, 157, 255, .26);
+  --hero-a: rgba(0, 94, 224, .24); --hero-b: rgba(56, 189, 248, .12); --dots: rgba(255, 255, 255, .06);
+  --hdr: rgba(15, 18, 20, .86); --footer: #0b0e0f; --scrim: rgba(0, 0, 0, .6);
+  --good: #3ccf7d; --warn: #f2c14e; --bad: #f27070;
+  color-scheme: dark;
+}
+
+@layer base {
+  html { scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+  body { @apply bg-bg text-text font-sans text-[14px] leading-[1.55] antialiased; transition: background .25s, color .25s; }
+  h1, h2, h3, h4 { @apply text-fg tracking-tight text-balance; }
+  ::selection { background: var(--sel); color: var(--fg); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--line); border-radius: 99px; border: 3px solid transparent; background-clip: content-box; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--mute); background-clip: content-box; }
+}
+
+@layer components {
+  .wrap { @apply mx-auto w-full max-w-[1000px] px-4 sm:px-6; }
+  .kicker { @apply text-[.78rem] font-bold uppercase tracking-[.08em] text-link; }
+
+  .btn { @apply inline-flex items-center justify-center gap-1.5 rounded-full px-[15px] py-[7px] text-[13.5px] font-semibold leading-snug whitespace-nowrap transition cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed; }
+  .btn-primary { @apply bg-accent text-accent-fg hover:bg-accent-hi hover:-translate-y-px active:translate-y-0; box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 1px 2px rgba(0,0,0,.15); }
+  .btn-ghost { @apply border border-line bg-transparent text-fg hover:bg-raised hover:border-mute; }
+  .btn-lg { @apply px-5 py-2.5 text-sm; }
+  .btn-sm { @apply px-3 py-[5px] text-[12.5px]; }
+
+  .link-u { color: var(--link); background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat; transition: background-size .2s; }
+  .link-u:hover, .group:hover .link-u { background-size: 100% 1px; }
+
+  .card { @apply rounded-[10px] border border-line bg-surface; }
+  .chip { @apply rounded-full border border-line bg-surface px-[11px] py-[5px] text-[.8rem] text-text cursor-pointer transition; }
+  .chip[aria-pressed="true"] { @apply border-accent bg-accent text-accent-fg; }
+
+  .field-input { @apply w-full rounded-lg border border-line bg-surface px-[11px] py-2 text-[.9rem] text-fg outline-none transition placeholder:text-mute focus:border-accent; }
+  .field-input:focus { box-shadow: 0 0 0 3px var(--sel); }
+  .field-input[aria-invalid="true"] { @apply border-bad; }
+}
+
+/* Bandeau d'accueil : halo doux + trame de points */
+.hero-bg { position: relative; isolation: isolate; overflow: hidden; }
+.hero-bg::before { content: ""; position: absolute; inset: 0; z-index: -1;
+  background: radial-gradient(ellipse 55% 60% at 18% 20%, var(--hero-a), transparent 70%), radial-gradient(ellipse 50% 55% at 85% 75%, var(--hero-b), transparent 70%); }
+.hero-bg::after { content: ""; position: absolute; inset: 0; z-index: -1;
+  background-image: radial-gradient(var(--dots) 1.2px, transparent 1.3px); background-size: 22px 22px;
+  mask-image: radial-gradient(ellipse 70% 70% at 50% 40%, #000 30%, transparent 80%); }
+.text-gradient { background: linear-gradient(90deg, var(--accent), var(--sky)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+/* Lien du menu : trait sous le lien */
+.nav-link { position: relative; }
+.nav-link::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: -2px; height: 2px; border-radius: 2px; background: var(--accent); transform: scaleX(0); transition: transform .2s; }
+.nav-link:hover::after { transform: scaleX(.5); }
+.nav-link.active::after { transform: scaleX(1); }
+
+/* Aperçus du jeu */
+.shot { container-type: inline-size; box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 24px 48px -20px rgba(10,30,70,.35); transition: transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s; }
+.shot:hover { transform: translateY(-4px); box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 32px 60px -22px rgba(10,30,70,.45); }
+.pixel { image-rendering: pixelated; image-rendering: crisp-edges; }
+
+@keyframes pop { from { opacity: .4; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
+.animate-pop { animation: pop .25s cubic-bezier(.2,.8,.2,1); }
+
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
