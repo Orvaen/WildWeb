@@ -6,11 +6,14 @@
     <meta name="description" content="Wild Link, le MMO de capture en ligne joué par toute une région." />
     <link rel="icon" href="/logo.svg" type="image/svg+xml" />
     <title>Wild Link</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" />
     <script>
       // Applique le thème avant le premier rendu pour éviter un flash.
       try {
         var t = localStorage.getItem('wl.theme');
-        if (!t) t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        if (!t) t = 'dark'; // sombre par défaut ; le bouton soleil/lune passe en clair
         document.documentElement.dataset.theme = t;
       } catch (e) {}
     </script>

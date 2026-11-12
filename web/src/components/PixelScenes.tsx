@@ -145,3 +145,34 @@ export function MarketShot() {
     </ShotFrame>
   )
 }
+
+// Création du dresseur : grand sprite + options de personnalisation
+function drawTrainerCard(c: Ctx) {
+  const { P } = painter(c, 5)
+  const g = c.createLinearGradient(0, 0, 0, 160)
+  g.addColorStop(0, '#1d2b4a'); g.addColorStop(1, '#0d1424')
+  c.fillStyle = g; c.fillRect(0, 0, 240, 160)
+  for (let x = 0; x < 240; x += 12) P(x, 120, 6, 1, 'rgba(255,255,255,.08)')
+  const sprite = ['....HHHHHH......', '...HHHHHHHH.....', '...HWWHHHHHH....', '...KSSSSSSK.....', '...SKSSSSKS.....', '....SSSSSS......', '...BBBBBBBB.....', '..SBBYBBYBBS....', '..SBBBBBBBBS....', '...DDDDDDDD.....', '...DDD..DDD.....', '...KKK..KKK.....']
+  const pal: Record<string, string> = { H: '#3d7bff', W: '#ffffff', K: '#20242a', S: '#f1c39a', B: '#e8eef8', Y: '#3cc8f5', D: '#2f3d55' }
+  const S = 6, ox = 26, oy = 34
+  for (let i = 0; i < 10; i++) P(ox + 14 + i * 6, oy + 84, 6, 4, 'rgba(0,0,0,.35)')
+  sprite.forEach((row, j) => [...row].forEach((ch, i) => { if (pal[ch]) P(ox + i * S, oy + j * S, S, S, pal[ch]) }))
+}
+
+export function CharacterShot() {
+  const row = 'flex items-center justify-between gap-[2cqw] rounded-[1.6cqw] bg-white/[.06] px-[2.2cqw] py-[1.5cqw]'
+  return (
+    <ShotFrame title="Wild Link · Création du dresseur">
+      <PixelCanvas draw={drawTrainerCard} />
+      <div className="absolute top-[4cqw] right-[4cqw] grid w-[46cqw] gap-[1.4cqw] text-[2.3cqw] text-white">
+        <b className="text-[2.8cqw]">Ton dresseur</b>
+        <div className={row}><span className="text-white/60">Casquette</span><span className="flex gap-[1cqw]">{['#3d7bff', '#e05a47', '#f2c14e', '#1f9a55'].map((c, i) => <i key={c} className={`size-[3.2cqw] rounded-full ${i ? '' : 'ring-[.5cqw] ring-white'}`} style={{ background: c }} />)}</span></div>
+        <div className={row}><span className="text-white/60">Tenue</span><span>Nuit d'été ›</span></div>
+        <div className={row}><span className="text-white/60">Monture</span><span>Vélo néon ›</span></div>
+        <div className={row}><span className="text-white/60">Effet</span><span>Étincelles ›</span></div>
+        <span className="mt-[1cqw] rounded-[1.6cqw] bg-[#3d7bff] py-[1.6cqw] text-center font-semibold">Commencer l'aventure</span>
+      </div>
+    </ShotFrame>
+  )
+}
