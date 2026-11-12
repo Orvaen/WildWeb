@@ -83,6 +83,15 @@ Erreurs : `{"error": "…"}`, et pour les formulaires `{"error": "…", "fields"
 
 Boutique (pas de paiement), votes (compteur local au navigateur), classement et statistiques du profil. Ce sont les prochaines routes à ajouter à l'API.
 
+## Vitrine sur GitHub Pages
+
+Le site (sans l'API) est publié automatiquement par `.github/workflows/pages.yml` à chaque push sur `main` qui touche `web/`.
+
+- Activation, une seule fois : **Settings → Pages → Source : GitHub Actions**.
+- Adresse : `https://orvaen.github.io/WildWeb/`.
+- Sans API, la connexion et les profils affichent « Les comptes ouvriront avec l'alpha ».
+- Avec un domaine (`wildlink.arkerion.dev`) : ajoute le domaine dans Settings → Pages, un `CNAME wildlink → orvaen.github.io` chez Cloudflare (nuage gris), et la variable de dépôt `PAGES_BASE = /`.
+
 ## Mise en ligne (wildlink.arkerion.dev)
 
 Le dossier `deploy/` installe tout sur un serveur Ubuntu ou Debian neuf, x86_64 ou ARM (par exemple une VM gratuite Oracle Cloud) :

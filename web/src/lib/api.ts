@@ -36,7 +36,11 @@ export class ApiError extends Error {
 let token: string | null = null
 export const setToken = (t: string | null) => { token = t }
 
+// Version vitrine (GitHub Pages) : pas d'API derrière, on le dit clairement au lieu d'afficher une erreur réseau.
+export const STATIC_SITE = import.meta.env.VITE_STATIC === '1'
+
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+  if (STATIC_SITE) throw new ApiError(0, "Les comptes ouvriront avec l'alpha : cette version en ligne du site est une vitrine.")
   const headers: Record<string, string> = {}
   const form = body instanceof FormData
   if (body !== undefined && !form) headers['Content-Type'] = 'application/json'

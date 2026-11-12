@@ -1,0 +1,54 @@
+# Publie le site (vitrine, sans l'API) sur GitHub Pages à chaque push sur main.
+# Activation, une seule fois : Settings → Pages → Source : « GitHub Actions ».
+name: Site sur GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths: ['web/**', '.github/workflows/pages.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Construire le site
+        working-directory: web
+        env:
+          # « /WildWeb/ » pour orvaen.github.io/WildWeb/. Avec un domaine (wildlink.arkerion.dev),
+          # crée la variable de dépôt PAGES_BASE = / (Settings → Secrets and variables → Actions → Variables).
+          VITE_BASE: ${{ vars.PAGES_BASE || '/WildWeb/' }}
+          VITE_STATIC: '1'
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+          # Les adresses comme /joueur/Twister doivent aussi ouvrir le site React
+          cp dist/index.html dist/404.html
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
