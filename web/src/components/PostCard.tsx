@@ -1,20 +1,26 @@
 import { Link } from 'react-router-dom'
-import type { Post } from '../data/news'
+import { readTime, type Post } from '../data/news'
+import Cover from './Cover'
 
-export default function PostCard({ post, index }: { post: Post; index: number }) {
-  const h = (index * 67 + 200) % 360
+export const CAT_STYLE: Record<string, string> = {
+  Devlog: 'bg-[rgba(61,123,255,.16)] text-link',
+  Annonce: 'bg-[rgba(138,108,255,.18)] text-violet',
+  'Mise à jour': 'bg-[rgba(60,200,245,.16)] text-sky',
+  Communauté: 'bg-raised text-text',
+}
+
+export function CatPill({ cat }: { cat: string }) {
+  return <span className={`rounded-full px-2.5 py-0.5 text-[.74rem] font-semibold ${CAT_STYLE[cat] ?? 'bg-raised text-text'}`}>{cat}</span>
+}
+
+export default function PostCard({ post }: { post: Post; index?: number }) {
   return (
-    <Link to={`/actus/${post.id}`} className="card group grid min-w-0 content-start overflow-hidden transition hover:-translate-y-0.5 hover:border-accent">
-      <div className="flex aspect-[2/1] items-end p-3" style={{
-        background: `radial-gradient(circle at 25% 30%, hsl(${h} 60% 62% / .55), transparent 60%), radial-gradient(circle at 80% 80%, hsl(${h + 60} 70% 60% / .45), transparent 55%), var(--bg-3)`,
-      }}>
-        <span className="rounded-md bg-surface px-2.5 py-1 text-[.74rem] font-semibold text-fg">{post.cat}</span>
-      </div>
-      <div className="grid content-start gap-1.5 px-4 pt-3.5 pb-4">
-        <span className="text-[.8rem] text-mute">{post.date}</span>
-        <h3 className="text-[.95rem] leading-snug font-bold">{post.title}</h3>
-        <p className="text-[.86rem]">{post.sum}</p>
-        <span className="link-u mt-1 w-fit text-[.8rem] font-semibold">Lire l'article →</span>
+    <Link to={`/actus/${post.id}`} className="group grid min-w-0 content-start gap-4">
+      <Cover art={post.art} className="aspect-[16/10] rounded-2xl border border-line" />
+      <div className="grid gap-2 px-1">
+        <div className="flex items-center gap-2.5 text-[.82rem] text-mute"><CatPill cat={post.cat} />{post.date} · {readTime(post)} min</div>
+        <h3 className="display text-[1.3rem] !leading-snug transition group-hover:text-link">{post.title}</h3>
+        <p className="line-clamp-2 text-text">{post.sum}</p>
       </div>
     </Link>
   )
